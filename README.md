@@ -4,7 +4,7 @@
 This is the repository for the paper [Pose Priors from Language Models](https://arxiv.org/abs/TODO), which demonstrates that (multimodal) language models encode information about human pose that we can operationalize to improve 3D pose reconstruction.
 
 ## Data
-Download the necessary files from BUDDI and pre-processed data by running `bash fetch_data.sh`. The dataset structure should look like this:
+Download the necessary files from BUDDI and pre-processed data by running `bash fetch_data.sh`. The script requires [gdown](https://pypi.org/project/gdown/). The dataset structure should look like this:
 ```
 |-- datasets/
     |-- original/

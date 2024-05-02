@@ -24,7 +24,10 @@ rm -r "__MACOSX/"
 # link imar vision tools to essentials 
 ln -s $PWD/third-party/imar_vision_datasets_tools $PWD/essentials/imar_vision_datasets_tools
 
-# Download data
-# gdown TODO
+# Download datasets.tar.gz
+gdown 16WQ6i_61CWN8L6Cj68i2cXmvp4_HTQ4d
 
 tar -xvzf datasets.tar.gz
+
+# Download prosepose_env.tar.gz
+gdown 1K-TNTjyyuM1NOQR6hjpWRrkt2xAJYSSa
