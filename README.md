@@ -1,6 +1,6 @@
 # ProsePose
 <b> Pose Priors from Language Models </b>\
-[![Website shields.io](https://img.shields.io/website-up-down-green-red/http/shields.io.svg)](https://prosepose.github.io/prosepose/) [![arXiv](https://img.shields.io/badge/arXiv-2305.20091-00ff00.svg)](https://arxiv.org/abs/TODO)
+[![Website shields.io](https://img.shields.io/website-up-down-green-red/http/shields.io.svg)](https://prosepose.github.io) [![arXiv](https://img.shields.io/badge/arXiv-2305.20091-00ff00.svg)](https://arxiv.org/abs/TODO)
 This is the repository for the paper [Pose Priors from Language Models](https://arxiv.org/abs/TODO), which demonstrates that (multimodal) language models encode information about human pose that we can operationalize to improve 3D pose reconstruction.
 
 ## Data
