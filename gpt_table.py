@@ -479,17 +479,17 @@ if __name__ == "__main__":
                 }
                 outputs[key].append(output)
         else:
-            print(key)
-            for ex in programs[key]:
+            examples = keys[key]
+            for ex in examples:
                 if isinstance(ex, str):
                     example = {'caption': ex}
                 else:
                     assert isinstance(example, dict)
-                print('CAPTION:', ex['caption'])
+                print('CAPTION:', example['caption'])
                 if 'rewritten_caption' not in example:
                     gpt_response = client.chat.completions.create(
                         model=args.simple_gpt_model_name,
-                        messages=[{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': REWRITE_CAPTION_PROMPT+ex['caption']}],
+                        messages=[{'role': 'system', 'content': 'You are a helpful assistant.'}, {'role': 'user', 'content': REWRITE_CAPTION_PROMPT+example['caption']}],
                         temperature=0,
                         n=1,
                         max_tokens=200

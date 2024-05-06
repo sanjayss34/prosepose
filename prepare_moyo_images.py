@@ -6,9 +6,16 @@ import glob
 from PIL import Image
 import numpy as np
 
+def get_image_dir(key):
+    if key == 'Pose_Dedicated_to_the_Sage_Koundinya_or_Eka_Pada_RENAME_A2_YOGI_Cam_05_0465':
+        return 'Pose_Dedicated_to_the_Sage_Koundinya_or_Eka_Pada_Koundinyanasana_I_and_II-a'
+    if key == 'Pose_Dedicated_to_the_Sage_Koundinya_or_Eka_Pada_RENAME_A1_YOGI_Cam_05_0403':
+        return 'Pose_Dedicated_to_the_Sage_Koundinya_or_Eka_Pada_Koundinyanasana_I_and_II-b'
+    return '_'.join(key.split('_')[:-4])
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--moyo-dir", default="datasets/original/moyo_cam05_centerframe/")
+    parser.add_argument("--moyo-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets/original/moyo_cam05_centerframe/"))
     parser.add_argument("--images-subdir", default="images")
     parser.add_argument("--output-subdir", default="cropped_images")
     args = parser.parse_args()
@@ -22,14 +29,18 @@ if __name__ == "__main__":
         os.system('mkdir \"'+os.path.join(args.moyo_dir, split)+'\"')
         os.system('mkdir \"'+os.path.join(args.moyo_dir, split, args.images_subdir)+'\"')
         os.system('mkdir \"'+os.path.join(args.moyo_dir, split, args.output_subdir)+'\"')
-        with open(os.path.join(args.moyo_dir, split, split+'.json')) as f:
+        with open(os.path.join(args.moyo_dir.replace('original', 'processed'), split+'_keys.json')) as f:
             keys = json.load(f)
         for key in keys:
-            path = glob.glob(os.path.join(args.moyo_dir, 'images', '*', '*'+'_'.join(key['key'].split('_')[:-4]), 'YOGI_Cam_05', '*'+key['key']+'.jpg'))[0]
-            os.system('ln -s \"'+path+'\" \"'+os.path.join(args.moyo_dir, split, args.images_subdir, key['key']+'.jpg'))
+            print(os.path.join(args.moyo_dir, 'images', '*', '*'+'_'.join(key.split('_')[:-4]), 'YOGI_Cam_05', '*'+key+'.jpg'))
+            img_dir = get_image_dir(key)
+            path = glob.glob(os.path.join(args.moyo_dir, 'images', '*', '*'+img_dir, 'YOGI_Cam_05', '*'+key+'.jpg'))[0]
+            os.system('unlink \"'+os.path.join(args.moyo_dir, split, args.images_subdir, key+'.jpg')+'\"')
+            os.system('ln -s \"'+path+'\" \"'+os.path.join(args.moyo_dir, split, args.images_subdir, key+'.jpg')+'\"')
 
-            img = Image.open(os.path.join(args.moyo_dir, split, args.images_subdir, key['key']+'.jpg'))
-            path = os.path.join(args.moyo_dir, args.images_subdir, '../vitpose', key+'_keypoints.json')
+            img = Image.open(path)
+            # img = Image.open(os.path.join(args.moyo_dir, split, args.images_subdir, key+'.jpg'))
+            path = os.path.join(args.moyo_dir, split, 'vitpose', key+'_keypoints.json')
             if not os.path.exists(path):
                 path = path.replace('/vitpose/', '/openpose/')
                 print('using openpose')
@@ -53,4 +64,4 @@ if __name__ == "__main__":
                 img = img.crop(bbox)
             else:
                 print('no keypoints')
-            img.save(os.path.join(args.moyo_dir, split, args.output_subdir, key['key']+'.jpg'))
+            img.save(os.path.join(args.moyo_dir, split, args.output_subdir, key+'.jpg'))

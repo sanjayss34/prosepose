@@ -19,6 +19,7 @@ import trimesh
 import torch.nn as nn
 import numpy as np
 import pickle
+from tqdm import tqdm
 
 from llib.utils.mesh import winding_numbers
 
@@ -64,8 +65,15 @@ class BodySegment(nn.Module):
 
         # create vector to select vertices form faces
         tri_vidx = []
-        for ii in range(faces.max().item()+1):
+        # values = torch.ones_like(faces).long()
+        faces = faces.cuda()
+        for ii in tqdm(range(faces.max().item()+1)):
             tri_vidx += [torch.nonzero(faces==ii)[0].tolist()]
+            # tri_vidx.append(torch.nonzero(faces==ii)[0])
+            # values = torch.minimum(values, (faces-ii).abs())
+        # values = torch.nonzero(values)[0].tolist()
+        # tri_vidx = torch.cat(tri_vidx).tolist()
+        # tri_vidx = torch.stack(tri_vidx)
         self.register_buffer('tri_vidx', torch.tensor(tri_vidx))
 
     def create_band_faces(self):
