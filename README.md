@@ -109,7 +109,7 @@ Note: the threshold for the CHI3D command corresponds to the threshold t in the 
 ```
 @article{subramanian2024pose,
     title={Pose Priors from Language Models},
-    author={Subramanian, Sanjay and Ng, Evonne and M{\“u}ller, Lea and Klein, Dan and Ginosar, Shiry and Darrell, Trevor},
+    author={Subramanian, Sanjay and Ng, Evonne and M{\"u}ller, Lea and Klein, Dan and Ginosar, Shiry and Darrell, Trevor},
     journal={arXiv preprint TODO},
     year={2024}}
 ```
