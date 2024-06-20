@@ -66,6 +66,7 @@ class AnnealLoss(Loss):
 @dataclass
 class CustomLoss(Loss):
     unused: int = 0
+    mean_aggregate: bool = False
 
 @dataclass
 class Losses:

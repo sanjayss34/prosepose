@@ -45,13 +45,6 @@ SMPL_TO_H36M = torch.from_numpy(np.load(jreg_path)).to('cuda').float()
 H36M_TO_J17 = [6, 5, 4, 1, 2, 3, 16, 15, 14, 11, 12, 13, 8, 10, 0, 7, 9]
 H36M_TO_J14 = H36M_TO_J17[:14]
 
-# We need this to only evaluate on images that do not miss keypoint/BEV detections
-ORIG_DATA_FOLDER = 'datasets/original/CHI3D'
-PROCESSED_DATA_FOLDER = 'datasets/processed/CHI3D'
-
-PROCESSED_DATA = pickle.load(open(f'{PROCESSED_DATA_FOLDER}/train/images_contact_processed.pkl', 'rb'))
-TRAIN_VAL_SPLIT = np.load(f'{PROCESSED_DATA_FOLDER}/train/train_val_split.npz')
-
 def get_contact_map(vertices, sc_module, euclthres=None):
     vertices = (vertices - vertices.mean(0)).unsqueeze(0)
 
@@ -326,7 +319,6 @@ def main(cfg, cmd_args):
             results.output[f'est_pa_mpjpe_h0'].append(
                 pa_mpjpe_metric(est_smplx_joints[0].cpu().numpy(), gt_smplx_joints[0].cpu().numpy()).mean())
             results.info['img_names'].append(fname)
-
     results.topkl(print_result=cmd_args.print_result)
     print('--------')
     print('Contact subset results')

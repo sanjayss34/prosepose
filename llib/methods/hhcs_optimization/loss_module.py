@@ -16,6 +16,9 @@ from llib.utils.keypoints.gmfo import GMoF
 def min_distance(part1_vertices, part2_vertices):
     return torch.cdist(part1_vertices, part2_vertices).min()
 
+def mean_distance(part1_vertices, part2_vertices):
+    return torch.cdist(part1_vertices, part2_vertices).mean()
+
 class HHCOptiLoss(nn.Module):
     def __init__(
         self,
@@ -26,6 +29,7 @@ class HHCOptiLoss(nn.Module):
 
         self.cfg = losses_cfgs
 
+        self.mean_aggregate = False
         # when loss weigts are != 0, add loss as member variable
         for name, cfg in losses_cfgs.items():
             if name == 'debug':
@@ -34,6 +38,9 @@ class HHCOptiLoss(nn.Module):
             # add loss weight as member variable
             weight = cfg.weight
             setattr(self, name + '_weights', weight)
+
+            if name == "custom":
+                self.mean_aggregate = cfg.mean_aggregate
             
             # add criterion as member variable when weight != 0 exists
             if sum([x != 0 for x in cfg.weight]) > 0 and name != "custom":
@@ -502,7 +509,7 @@ class HHCOptiLoss(nn.Module):
         # contact loss between two humans
         ld['hhc_contact_loss'] = 0.0
         if self.hhc_contact_weight:
-            print('using contact map', self.hhc_contact_weight)
+            # print('using contact map', self.hhc_contact_weight)
             if two_people:
                 ld['hhc_contact_loss'] += self.get_hhc_contact_loss(
                     contact_map, smpl_output_h1.vertices, smpl_output_h2.vertices)
@@ -544,6 +551,10 @@ class HHCOptiLoss(nn.Module):
                 try:
                     code = loss_func['code'].replace('def loss(', f'def loss{loss_func_i}(')
                     locals_dict = locals()
+                    # if self.mean_aggregate:
+                    #     # print('MEAN')
+                    #     locals_dict['min_distance'] = mean_distance
+                    # else:
                     locals_dict['min_distance'] = min_distance
                     def possibly_touching(person1_part, person2_part):
                         return (person1_part, person2_part) in left_right_pairs

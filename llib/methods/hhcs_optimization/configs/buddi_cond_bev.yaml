@@ -4,10 +4,11 @@ logging:
   checkpoint_folder: '' 
   validation_folder: ''
 datasets:
-  train_names: []
+  train_names: ['chi3d']
   train_composition: [1.0]
   val_names: []
   flickrci3ds:
+    processed_pkl_extension: '_bev_optimization.pkl'
     processed_data_folder: 'datasets/processed/FlickrCI3D_Signatures'
     openpose_folder: 'keypoints/openpose'
     vitpose_folder: 'keypoints/vitpose'

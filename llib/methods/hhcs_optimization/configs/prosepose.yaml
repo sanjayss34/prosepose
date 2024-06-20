@@ -24,7 +24,7 @@ datasets:
     # custom_losses_path: 'datasets/original/CHI3D/test/test_gpt4v_prompt2_custom_losses.json'
   hi4d:
     load_single_camera: True
-    custom_losses_path: 'datasets/original/Hi4D/val_gpt4v_prompt2_custom_losses.json'
+    custom_losses_path: 'new_datasets/original/Hi4D/val_gpt4v_prompt2_custom_losses.json'
     # custom_losses_path: 'datasets/original/Hi4D/test_gpt4v_prompt2_custom_losses.json'
   augmentation:
     use: False
@@ -50,6 +50,7 @@ model:
         weight: [0.04, 0.1]
       custom: # sum over minimum distance between regions in contact
         weight: [1000.0, 1000.0]
+          # mean_aggregate: True
       hhc_contact_general: # contact loss that resolves intersection and brings part close to each other in contact. Memory intense.
         type: 'hhcgen'
         weight: [0.0, 1000.0] # must be set to 0.0, because loss is not implemented

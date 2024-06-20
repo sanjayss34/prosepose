@@ -16,7 +16,9 @@ datasets:
     # Use best_match_with_bev_box
     best_match_with_bev_box: True
     unique_keypoint_match: False
-    custom_losses_path: 'datasets/original/moyo_cam05_centerframe/trainval/trainval_gpt4v_custom_losses.json'
+      # custom_losses_path: 'moyo_trainval_llava/programs_from_prompt4.json'
+    custom_losses_path: 'moyo_test_llava/programs_from_prompt4.json'
+      # custom_losses_path: 'datasets/original/moyo_cam05_centerframe/trainval/trainval_gpt4v_custom_losses.json'
       # custom_losses_path: 'datasets/original/moyo_cam05_centerframe/test/test_gpt4v_custom_losses.json'
   chi3d:
     load_contact_frame_only: True

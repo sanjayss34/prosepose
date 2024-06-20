@@ -16,13 +16,18 @@ datasets:
     pseudogt_folder: '' #'hhcs_opti/release_20230811' # we're creating the pseudo ground-truth here, so doesn't exit yet
     processed_pkl_extension: '_bev_optimization.pkl'
       # custom_losses_path: 'datasets/original/FlickrCI3D_Signatures/train/gpt4v_custom_losses1.json'
-    custom_losses_path: 'datasets/original/FlickrCI3D_Signatures/train/gpt4v_direct_prompt2_20samples_leftrightpossibilities_tables_custom_losses.json'
+      # custom_losses_path: 'datasets/original/FlickrCI3D_Signatures/train/gpt4v_direct_prompt2_20samples_leftrightpossibilities_tables_custom_losses.json'
+      # custom_losses_path: 'new_datasets/original/FlickrCI3D_Signatures/train/val_gpt4v_custom_losses_20samples.json'
+    custom_losses_path: 'new_datasets/original/FlickrCI3D_Signatures/test/programs_from_table_20samples_leftrightpossibilities_cleaned.json'
   chi3d:
     load_contact_frame_only: True
     load_single_camera: False
   hi4d:
     load_single_camera: True
-    custom_losses_path: 'datasets/original/Hi4D/gpt4v_direct_prompt2_leftrightpossibilities_tables_custom_losses.json'
+      # custom_losses_path: 'datasets/original/Hi4D/gpt4v_direct_prompt2_leftrightpossibilities_tables_custom_losses.json'
+      # custom_losses_path: 'new_datasets/original/Hi4D/test_gpt4v_prompt2_custom_losses.json'
+    custom_losses_path: 'new_datasets/original/Hi4D/val_gpt4v_prompt2_custom_losses.json'
+      # custom_losses_path: 'gpt4o_hi4d_val_o2/programs_from_prompt_o2.json'
   augmentation:
     use: False
   processing:
@@ -55,8 +60,8 @@ model:
         weighted: True
         weight: [0.02, 0.02]
       custom: # sum over minimum distance between regions in contact
-        weight: [1000.0, 1000.0]
-        fixed_order: False
+        weight: [10000.0, 10000.0]
+          # fixed_order: False
       hhc_contact: # sum over minimum distance between regions in contact
         type: 'hhcmap'
         r2r_dist_type: 'min'

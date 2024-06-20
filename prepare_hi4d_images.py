@@ -86,7 +86,7 @@ for split in ['val', 'test']:
                 covering_box = [min([box[0] for box in boxes]), min([box[1] for box in boxes]), max([box[2] for box in boxes]), max([box[3] for box in boxes])]
                 annotated_img = annotated_img[int(covering_box[1]):int(covering_box[3]), int(covering_box[0]):int(covering_box[2])]
                 try:
-                    cv2.imwrite(os.path.join(output_dir, out_fname), annotated_img)
+                    cv2.imwrite(os.path.join(args.output_dir, out_fname), annotated_img)
                 except Exception as e:
                     print(e)
                     annotated_img = cv2.imread(path)
