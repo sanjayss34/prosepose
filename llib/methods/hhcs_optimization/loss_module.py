@@ -564,10 +564,7 @@ class HHCOptiLoss(nn.Module):
                         num_arguments = len(code.split(f'def loss{loss_func_i}(')[1].split(')')[0].split(','))
                         # print(num_arguments, code)
                         torch.set_default_device(smpl_output_h1.vertices.device)
-                        custom_loss = torch.minimum(
-                            locals_dict[f'loss{loss_func_i}'](smpl_output_h1.vertices[0], smpl_output_h2.vertices[0], VERTEX_LIST_MAP),
-                            locals_dict[f'loss{loss_func_i}'](smpl_output_h2.vertices[0], smpl_output_h1.vertices[0], VERTEX_LIST_MAP)
-                        )
+                        custom_loss = locals_dict[f'loss{loss_func_i}'](smpl_output_h1.vertices[0], smpl_output_h2.vertices[0], VERTEX_LIST_MAP)
                     else:
                         custom_loss = locals_dict[f"loss{loss_func_i}"](smpl_output_h1.vertices[0], VERTEX_LIST_MAP)
                     ld['custom_loss'] += custom_loss.to(smpl_output_h1.vertices.device) * self.custom_weight / len(custom_losses)

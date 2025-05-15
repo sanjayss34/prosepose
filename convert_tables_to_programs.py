@@ -3,6 +3,7 @@ from collections import defaultdict
 import itertools
 from tqdm import tqdm
 import json
+from copy import deepcopy
 from pattern.text.en import singularize
 
 """CANDIDATES = {
@@ -57,48 +58,6 @@ def get_part_list(term, left_right_specified, delimiter):
                 parts.append(part.split('(')[0].strip())
     return parts
 
-def multi_replace(s, replacements):
-    """
-    Replace multiple substrings in a string at once, ensuring that each original occurrence
-    is replaced independently.
-
-    Parameters:
-    - s: The original string.
-    - replacements: A dictionary where keys are substrings to be replaced and values are the
-      respective replacements.
-
-    Returns:
-    - The modified string with all replacements made.
-    """
-    # Find all occurrences of each substring to be replaced
-    replace_locations = []
-    for target, replacement in replacements.items():
-        start = 0
-        while True:
-            start = s.find(target, start)
-            if start == -1:
-                break
-            replace_locations.append((start, start + len(target), replacement))
-            start += len(target)
-    
-    # Sort locations by their start position
-    replace_locations.sort()
-    
-    # Construct the new string
-    result = []
-    last_end = 0
-    for start, end, replacement in replace_locations:
-        # Add the part of the string since the last replacement
-        result.append(s[last_end:start])
-        # Add the replacement
-        result.append(replacement)
-        last_end = end
-    
-    # Add the remaining part of the string
-    result.append(s[last_end:])
-    
-    return ''.join(result)
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-path")
@@ -107,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--prefix", default="")
     parser.add_argument("--suffix", default="")
     parser.add_argument("--max-program-length", default=None, type=int)
+    parser.add_argument("--not-both-orders", action="store_true")
     args = parser.parse_args()
 
     with open(args.input_path) as f:
@@ -118,6 +78,9 @@ if __name__ == "__main__":
         for example in examples[key]:
             pairs = []
             pairs_sans_lr = []
+            if isinstance(example, str):
+                example = {'table_response': example}
+            # print(example['table_response'])
             lines = example['table_response'].split('\n')
             for line in lines:
                 if len(line.split('|')) >= 3:
@@ -188,6 +151,7 @@ if __name__ == "__main__":
                     pairs_sans_lr += line_pairs_sans_lr
             default_program = "import torch\ndef loss(vertices1, vertices2, VERTEX_LIST_MAP):\n    return torch.tensor(0.0)"
             program = default_program
+            over_limit = False
             if len(pairs) > 0:
                 program = "import torch\ndef loss(vertices1, vertices2, VERTEX_LIST_MAP):\n    total_loss = torch.tensor(0.0, dtype=vertices1.dtype, device=vertices1.device)\n"
                 lr_possibilities = ['left', 'right']
@@ -197,6 +161,7 @@ if __name__ == "__main__":
                 base_names2 = []
                 counts1 = defaultdict(int)
                 counts2 = defaultdict(int)
+                pair_counts = defaultdict(int)
                 for pair in pairs_sans_lr:
                     if pair[0] in base_names_lr:
                         base_names1.append(pair[0]+'|'+str(counts1[pair[0]]))
@@ -210,53 +175,95 @@ if __name__ == "__main__":
                     else:
                         assert pair[1] in CANDIDATES
                         base_names2.append(pair[1])
-                combinations1 = list(itertools.product(["left", "right"], repeat=sum(counts1.values())))
-                combinations2 = list(itertools.product(["left", "right"], repeat=sum(counts2.values())))
-                lr_parts1 = list(counts1.keys())
-                lr_parts2 = list(counts2.keys())
-                pair_losses = {}
-                for combo1 in combinations1:
-                    full_names1 = []
-                    index1 = 0
-                    for name in base_names1:
-                        if '|' in name:
-                            full_names1.append(combo1[index1]+' '+name.split('|')[0])
-                            index1 += 1
-                        else:
-                            full_names1.append(name)
-                    assert all([name in CANDIDATES for name in full_names1])
-                    if any([counts1[part] > 1 and ('left '+part not in full_names1 or 'right '+part not in full_names1) for part in base_names_lr]):
-                        continue
-                    for combo2 in combinations2:
-                        full_names2 = []
-                        index2 = 0
-                        for name in base_names2:
-                            if '|' in name:
-                                full_names2.append(combo2[index2]+' '+name.split('|')[0])
-                                index2 += 1
-                            else:
-                                full_names2.append(name)
-                        assert all([name in CANDIDATES for name in full_names2])
-                        if any([counts2[part] > 1 and ('left '+part not in full_names2 or 'right '+part not in full_names2) for part in base_names_lr]):
-                            continue
-                        for part1, part2 in zip(full_names1, full_names2):
-                            if (part1, part2) not in pair_losses:
-                                pair_losses[(part1, part2)] = f'loss_{part1.replace(" ", "_").replace("(", "").replace(")", "")}_{part2.replace(" ", "_").replace("(", "").replace(")", "")}'
-                                program += f'    {pair_losses[(part1, part2)]} = min_distance(vertices1[VERTEX_LIST_MAP[\"{part1}\"]], vertices2[VERTEX_LIST_MAP[\"{part2}\"]])\n'
-                        program += f'    loss_term_{len(possible_losses)} = '+"+".join([pair_losses[(part1, part2)] for part1, part2 in zip(full_names1, full_names2)])+'\n'
-                        # program += f'    loss_term_{len(possible_losses)} = '+"+".join([f"min_distance(vertices1[VERTEX_LIST_MAP[\"{part1}\"]], vertices2[VERTEX_LIST_MAP[\"{part2}\"]])" for part1, part2 in zip(full_names1, full_names2)])+'\n'
-                        possible_losses.append(f'loss_term_{len(possible_losses)}')
-                        if args.max_program_length is not None and len(program) > args.max_program_length:
-                            break
-                    if args.max_program_length is not None and len(program) > args.max_program_length:
-                        break
-                program += '    total_loss = torch.stack(['+', '.join(possible_losses)+']).min()\n'
+                    pair_counts[(base_names1[-1].split('|')[0], base_names2[-1].split('|')[0])] += 1
+
+                if args.max_program_length is not None and 2**max(sum(counts1.values()), sum(counts2.values())) > args.max_program_length:
+                  over_limit = True
+                else:
+                  combinations1 = list(itertools.product(["left", "right"], repeat=sum(counts1.values())))
+                  combinations2 = list(itertools.product(["left", "right"], repeat=sum(counts2.values())))
+                  lr_parts1 = list(counts1.keys())
+                  lr_parts2 = list(counts2.keys())
+                  pair_losses = {}
+                  for combo1 in combinations1:
+                      full_names1 = []
+                      index1 = 0
+                      for name in base_names1:
+                          if '|' in name:
+                              full_names1.append(combo1[index1]+' '+name.split('|')[0])
+                              index1 += 1
+                          else:
+                              full_names1.append(name)
+                      assert all([name in CANDIDATES for name in full_names1])
+                      if any([counts1[part] > 1 and ('left '+part not in full_names1 or 'right '+part not in full_names1) for part in base_names_lr]):
+                          continue
+                      for combo2 in combinations2:
+                          full_names2 = []
+                          index2 = 0
+                          for name in base_names2:
+                              if '|' in name:
+                                  full_names2.append(combo2[index2]+' '+name.split('|')[0])
+                                  index2 += 1
+                              else:
+                                  full_names2.append(name)
+                          assert all([name in CANDIDATES for name in full_names2])
+                          if any([counts2[part] > 1 and ('left '+part not in full_names2 or 'right '+part not in full_names2) for part in base_names_lr]):
+                              continue
+                          for part1, part2 in zip(full_names1, full_names2):
+                              if (part1, part2) not in pair_losses:
+                                  pair_losses[(part1, part2)] = f'loss_{part1.replace(" ", "_").replace("(", "").replace(")", "")}_{part2.replace(" ", "_").replace("(", "").replace(")", "")}'
+                                  program += f'    {pair_losses[(part1, part2)]} = min_distance(vertices1[VERTEX_LIST_MAP[\"{part1}\"]], vertices2[VERTEX_LIST_MAP[\"{part2}\"]])\n'
+                          program += f'    loss_term_{len(possible_losses)} = '+"+".join([pair_losses[(part1, part2)] for part1, part2 in zip(full_names1, full_names2)])+'\n'
+                          # program += f'    loss_term_{len(possible_losses)} = '+"+".join([f"min_distance(vertices1[VERTEX_LIST_MAP[\"{part1}\"]], vertices2[VERTEX_LIST_MAP[\"{part2}\"]])" for part1, part2 in zip(full_names1, full_names2)])+'\n'
+                          possible_losses.append(f'loss_term_{len(possible_losses)}')
+                          if args.max_program_length is not None and len(program) > args.max_program_length:
+                              break
+                      if args.max_program_length is not None and len(program) > args.max_program_length:
+                          break
+                  program += '    total_loss = torch.stack(['+', '.join(possible_losses)+']).min()\n'
                 program += '    return total_loss'
             example['code'] = program
-            if args.max_program_length is not None and len(program) > args.max_program_length:
+            if args.max_program_length is not None and (over_limit or len(program) > args.max_program_length):
                 example['code'] = default_program
             lst.append(example)
         outputs[args.prefix+key+args.suffix] = lst
+    # Condense the list of programs into a single program for each example
+    both_orders = not args.not_both_orders
+    outputs2 = {}
+    for key in outputs:
+        new_program = "import torch\ndef loss(vertices1, vertices2, VERTEX_LIST_MAP):\n    total_loss = torch.tensor(0.0, dtype=vertices1.dtype)\n"
+        loss_pairs = set()
+        end_lines = ""
+        for i, datum in enumerate(outputs[key]):
+            lines = datum['code'].split('\n')
+            for line in lines:
+                if line.strip()[:5] == 'loss_' and line.strip()[:9] != 'loss_term':
+                    line1 = line.replace('loss_', 'lossa_')
+                    line2 = line.replace('vertices1', 'vertices3').replace('vertices2', 'vertices1').replace('vertices3', 'vertices2').replace('loss_', 'lossb_')
+                    loss_pairs.add(line1+'\n')
+                    if both_orders:
+                      loss_pairs.add(line2+'\n')
+                elif line.strip()[:9] == 'loss_term':
+                    end_lines += f'    program{i}_'+line.strip().replace('loss_', 'lossa_')+'\n'
+                    if both_orders:
+                      end_lines += f'    program{i}_'+line.strip().replace('loss_', 'lossb_')+'\n'
+                elif line.strip()[:10] == 'total_loss':
+                    end_lines += line.replace('loss_term', f'program{i}_lossa_term').replace('total_loss ', f'program{i}_total_lossa ')+'\n'
+                    if both_orders:
+                      end_lines += line.replace('loss_term', f'program{i}_lossb_term').replace('total_loss ', f'program{i}_total_lossb ')+'\n'
+                      end_lines += f"    total_loss += min(program{i}_total_lossa, program{i}_total_lossb)\n"
+                    else:
+                      end_lines += f"    total_loss += program{i}_total_lossa\n"
+        for pair in sorted(list(loss_pairs)):
+            new_program += pair
+        new_program += end_lines
+        new_program += f"    return total_loss / {len(outputs[key])}"
+        outputs2[key] = [{'code': new_program}]
+        for k in outputs[key][0]:
+            if k != 'code':
+                outputs2[key][0][k] = [datum[k] for datum in outputs[key]]
+        assert outputs2[key][0]['code'] == new_program
+    outputs = outputs2
     print('Final length:', len(outputs))
     with open(args.output_path, 'w') as fout:
         json.dump(outputs, fout)
